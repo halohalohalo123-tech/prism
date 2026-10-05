@@ -12,6 +12,16 @@ class MineralClassifier:
 
     def predict(self, feature_vector):
 
+        expected = self.model.n_features_in_
+
+        if len(feature_vector) != expected:
+
+            raise ValueError(
+                "The model expects %d bands but got %d. "
+                "The library changed: run  python train_model.py  "
+                "again." % (expected, len(feature_vector))
+            )
+
         probs = self.model.predict_proba(
 
             feature_vector.reshape(

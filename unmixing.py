@@ -2,21 +2,38 @@ import numpy as np
 from scipy.optimize import nnls
 
 
-def FCLS(sample, library):
+def FCLS(sample, library, delta=1e3):
+    """
+    Fully Constrained Least Squares unmixing.
 
-    coeffs = []
+    Solves ALL minerals together:
+        sample  ~  sum_i( a_i * library_i )
+    with  a_i >= 0  (non-negativity)  and  sum(a_i) = 1  (sum-to-one).
 
-    for mineral in library:
+    The sum-to-one rule is enforced by adding one extra row of
+    (delta * 1) to the problem, a standard FCLS trick.
+    """
 
-        c, _ = nnls(
-            mineral.reshape(-1, 1),
-            sample
-        )
+    # shape: (bands, minerals)
+    A = library.T
 
-        coeffs.append(c[0])
+    A_aug = np.vstack([
+        A,
+        delta * np.ones((1, A.shape[1]))
+    ])
 
-    coeffs = np.array(coeffs)
+    b_aug = np.append(sample, delta)
 
-    coeffs = coeffs / coeffs.sum()
+    abundances, _ = nnls(
+        A_aug,
+        b_aug,
+        maxiter=10000
+    )
 
-    return coeffs
+    # remove any tiny numerical drift from exactly 1
+    total = abundances.sum()
+
+    if total > 0:
+        abundances = abundances / total
+
+    return abundances

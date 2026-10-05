@@ -1,0 +1,11 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# generated output (each run appends a row)
+results.csv
+
+# environments / secrets
+venv/
+.venv/
+.env

@@ -1,33 +1,22 @@
-import sys
 import os
+import sys
 
-# إضافة مسار المشروع
-path = '/home/Ha0la1/prism'
-if path not in sys.path:
-    sys.path.append(path)
+# the folder this file lives in (works on any machine / server)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-import dash
-from dash import html
-import numpy as np
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
 
-# إنشاء التطبيق بشكل مباشر ونظيف ليقرأه سيرفر PythonAnywhere بدون أخطاء
-app = dash.Dash(__name__)
+# loader.py and classifier use relative paths (data/..., models/...)
+os.chdir(BASE_DIR)
 
-# تصميم صفحة مؤقتة أو ترحيبية تتأكدي من خلالها أن الموقع يعمل تماماً بدون مشاكل 502
-app.layout = html.Div(
-    style={
-        "backgroundColor": "#050816",
-        "color": "#00F5FF",
-        "padding": "50px",
-        "textAlign": "center",
-        "fontFamily": "Arial",
-        "minHeight": "100vh"
-    },
-    children=[
-        html.H1("PRISM Dashboard is Live!"),
-        html.P("تم تشغيل لوحة التحكم بنجاح على سيرفر PythonAnywhere.", style={"color": "#39FF14", "fontSize": "20px"})
-    ]
-)
+from pipeline import load_context
+from dashboard import build_dashboard
 
-# المتغير الأساسي المطلوب للـ WSGI
+# load library + model once when the server starts
+ctx = load_context()
+
+app = build_dashboard(ctx)
+
+# the variable PythonAnywhere / gunicorn looks for
 server = app.server

@@ -1,189 +1,16 @@
-import numpy as np
+import sys
 
-from loader import *
+from pipeline import load_context, analyze
+from dashboard import launch_dashboard
+from results import save_results
 
-from preprocessing import *
 
-from unmixing import *
+# optional: python main.py data/samples/other_sample.csv
+sample = sys.argv[1] if len(sys.argv) > 1 else "data/samples/sample.csv"
 
-from similarity import *
+ctx = load_context(sample)
 
-from features import *
-
-from classifier import *
-
-from anomaly import *
-
-from planetary import *
-
-from expert_system import *
-
-from dashboard import *
-
-from results import *
-
-# =====================================
-# LOAD LIBRARY
-# =====================================
-
-library, mineral_names = load_usgs_library()
-
-
-# =====================================
-# LOAD SAMPLE
-# =====================================
-
-sample_path = "data/samples/sample.csv"
-
-wl, refl = load_usgs_spectrum(
-    sample_path
-)
-
-wl, refl = resample_spectrum(
-    wl,
-    refl
-)
-
-
-# =====================================
-# PREPROCESSING
-# =====================================
-
-refl = smooth_signal(
-    refl
-)
-
-refl = continuum_removal(
-    refl
-)
-
-refl = normalize_spectrum(
-    refl
-)
-
-refl = kubelka_munk(
-    refl
-)
-
-
-# =====================================
-# FCLS
-# =====================================
-
-abundances = FCLS(
-    refl,
-    library
-)
-
-
-# =====================================
-# SAM
-# =====================================
-
-sam_scores = np.array([
-
-    SAM(
-        refl,
-        mineral
-    )
-
-    for mineral in library
-
-])
-
-
-# =====================================
-# FEATURE VECTOR
-# =====================================
-
-feature_vector = build_feature_vector(
-
-    refl,
-
-    sam_scores,
-
-    abundances
-
-)
-
-
-# =====================================
-# RANDOM FOREST
-# =====================================
-
-clf = MineralClassifier(
-
-    "models/random_forest.pkl"
-
-)
-
-label, confidence, probs = clf.predict(refl)
-
-
-# =====================================
-# UNCERTAINTY
-# =====================================
-
-u = uncertainty(
-    probs
-)
-
-
-# =====================================
-# RECONSTRUCTION
-# =====================================
-
-reconstructed = np.dot(
-
-    abundances,
-
-    library
-
-)
-
-
-loss = reconstruction_loss(
-
-    refl,
-
-    reconstructed
-
-)
-
-
-score = anomaly_score(
-
-    loss,
-
-    u
-
-)
-
-
-# =====================================
-# PLANETARY DETECTOR
-# =====================================
-
-planet = detect_planetary_origin(
-
-    abundances,
-
-    mineral_names
-
-)
-
-
-# =====================================
-# GEOLOGICAL RULES
-# =====================================
-
-geo_ok, geo_message = check_geological_consistency(
-
-        abundances,
-
-        mineral_names
-
-    )
+r = analyze(ctx)
 
 
 # =====================================
@@ -191,99 +18,53 @@ geo_ok, geo_message = check_geological_consistency(
 # =====================================
 
 print()
-
 print("========== RESULT ==========")
-
 print()
 
 print("Predicted Mineral:")
-print(label)
-
+print(r["label"])
 print()
 
 print("Confidence:")
-print(round(confidence, 4))
-
+print(round(r["confidence"], 4))
 print()
 
 print("Uncertainty:")
-print(round(u, 4))
-
+print(round(r["uncertainty"], 4))
 print()
 
 print("Reconstruction Loss:")
-print(round(loss, 6))
-
+print(round(r["loss"], 6))
 print()
 
 print("Anomaly Score:")
-print(round(score, 6))
-
+print(round(r["anomaly"], 6))
 print()
 
 print("Planetary Origin:")
-print(planet)
-
+print(r["planet"])
 print()
 
 print("Geological Consistency:")
-print(geo_message)
-
+print(r["geo_message"])
 print()
 
 print("Abundances:")
 
 for name, abundance in zip(
+        r["mineral_names"],
+        r["abundances"]):
 
-        mineral_names,
-
-        abundances):
-
-    print(
-
-        f"{name}: "
-
-        f"{abundance*100:.2f}%"
-
-    )
+    print(f"{name}: {abundance * 100:.2f}%")
 
 
 save_results(
-
-    label,
-
-    confidence,
-
-    u,
-
-    score,
-
-    planet
-
+    r["label"],
+    r["confidence"],
+    r["uncertainty"],
+    r["anomaly"],
+    r["planet"]
 )
 
 
-launch_dashboard(
-
-    mineral=label,
-
-    confidence=confidence,
-
-    uncertainty=u,
-
-    anomaly=score,
-
-    abundances=abundances,
-
-    mineral_names=mineral_names,
-
-    original=refl,
-
-    reconstructed=reconstructed,
-
-    planet=planet,
-
-    geo_message=geo_message
-
-)
-
+launch_dashboard(ctx)
