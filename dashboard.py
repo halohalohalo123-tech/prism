@@ -153,6 +153,7 @@ def build_dashboard(ctx):
 
     app = dash.Dash(__name__)
 
+
     # first render = no added noise
     r = analyze(ctx, 0.0)
 
@@ -216,7 +217,7 @@ def build_dashboard(ctx):
         children=[
 
             html.H1(
-                "COGNITIVE CROSS-PLANETARY SPECTRAL PERCEIVER ",
+                "Planetary Reflectance Intelligent & Synergetic Mechanism ",
                 style={"textAlign": "center", "color": CYAN}
             ),
 
