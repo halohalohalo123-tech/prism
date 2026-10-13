@@ -1,5 +1,7 @@
 Planetary Reflectance Intelligent and Synergetic Mechanism
 
+live Demo: https://Ha0la1.pythonanywhere.com
+
 Overview
 
 Mineral identification and abundance estimation from reflectance spectra,
